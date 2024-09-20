@@ -1,5 +1,4 @@
 import streamlit as st
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,7 +12,7 @@ def gini(y_true, y_probs):
     roc_auc = auc(fpr, tpr)
     return 2 * roc_auc - 1
 
-def plot_gini_curve(df, predicted_defaults):
+def plot_gini_curve(df):
     # Ordenar por probabilidades de default en orden descendente
     df = df.sort_values(by='default_prob', ascending=False).reset_index(drop=True)
 
@@ -23,7 +22,7 @@ def plot_gini_curve(df, predicted_defaults):
     df['cum_population'] = (np.arange(len(df)) + 1) / len(df)
 
     plt.figure()
-    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], predicted_defaults):.2f})')
+    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], df["default_prob"]):.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
@@ -31,6 +30,17 @@ def plot_gini_curve(df, predicted_defaults):
     plt.ylabel('Fracción acumulada de defaults')
     plt.title('Curva de Gini')
     plt.legend(loc="lower right")
+    st.pyplot(plt)
+
+def plot_distribution_by_threshold(df, predicted_defaults):
+    plt.figure(figsize=(12, 6))
+    sns.histplot(df['default_prob'], kde=False, bins=50, color='blue', label='Probabilidades de Default')
+    sns.histplot(df[predicted_defaults == 1]['default_prob'], kde=False, bins=50, color='red', label='Clasificados como Default')
+    plt.axvline(x=threshold, color='green', linestyle='--', label=f'Threshold = {threshold}')
+    plt.xlabel('Probabilidad de Default')
+    plt.ylabel('Conteo')
+    plt.legend(loc='upper right')
+    plt.title('Distribución de Probabilidades de Default y Threshold Aplicado')
     st.pyplot(plt)
 
 # Simular datos de DTI
@@ -77,21 +87,13 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     recall = recall_score(df['default'], predicted_defaults)
     st.write(f"Precisión: {precision:.2f}")
     st.write(f"Sensibilidad (Recall): {recall:.2f}")
-    st.write(f"Gini: {gini(df['default'], predicted_defaults):.4f}")
+    st.write(f"Gini: {gini(df['default'], df['default_prob']):.4f}")
 
-    # Graficar curva de densidad de DTI para No Default y Default
-    plt.figure(figsize=(12, 6))
-    sns.kdeplot(df[df['default'] == 0]['dti'], label='Sin Default', color='blue', fill=True, alpha=0.5)
-    sns.kdeplot(df[df['default'] == 1]['dti'], label='Con Default', color='red', fill=True, alpha=0.5)
-
-    plt.xlabel('Ratio Deuda/Ingreso (DTI)')
-    plt.ylabel('Densidad')
-    plt.legend(loc='upper right')
-    plt.title(f'Curva de Densidad de DTI para Default y Sin Default\nGini: {gini(df["default"], predicted_defaults):.4f}')
-    st.pyplot(plt)
+    # Graficar distribución de las probabilidades y clasificaciones por threshold
+    plot_distribution_by_threshold(df, predicted_defaults)
 
     # Graficar curva Gini
-    plot_gini_curve(df, predicted_defaults)
+    plot_gini_curve(df)
 
 # Crear sliders interactivos
 k_dti = st.sidebar.slider('Pendiente (k_DTI)', 0.01, 20.0, 1.0, 0.1)
