@@ -1,80 +1,6 @@
 import streamlit as st
 
 # Incluir explicación y ecuaciones en Markdown con soporte para LaTeX
-st.markdown(r"""
-# Calculadora de Gini sintético con supuestos 
-
-Se usan ecuaciones para calcular las probabilidades de default, generar los defaults, y calcular el Gini. Por simplicidad, se usa una única variable sintética, "ratio de sobre-endeudamiento":
-
-1. **Ecuación para el Ratio de sobre endeudamiento (RSE):**
-
-El **Ratio de Sobreendeudamiento (RSE)** se genera utilizando una distribución normal truncada (truncada porque se asume que no puede tener valores de apalancamiento negativos o demasiado altos):
-
-$$
-RSE = \max\left(0, \min\left(RSE_{\text{max}}, \mathcal{N}(\mu_{\text{deuda}}, \sigma_{\text{deuda}})\right)\right)
-$$
-
-Donde:
-- $\mu_{\text{deuda}}$ = 1.0: Media del RSE.
-- $\sigma_{\text{deuda}}$ = 0.5: Desviación estándar del RSE.
-- $\mathcal{N}$ representa la distribución normal.
-- $RSE_{\text{max}}$ es un parámetro ajustable que determina el valor máximo del RSE.
-
-2. **Función Logística para Calcular la Probabilidad de Default:**
-
-La probabilidad de default $P(\text{default})$ se calcula utilizando la siguiente ecuación logística, incorporando en "z" el proceso generador de datos del RSE:
-
-$$
-P(\text{default} \mid RSE) = \frac{1}{1 + e^{-z}}
-$$
-
-Donde:
-$$
-z = k_{\text{RSE}} \cdot (RSE - c_{\text{RSE}})
-$$
-
-3. **Generación de Defaults Usando la Distribución Binomial:**
-
-Después de calcular las probabilidades de default, se generan los eventos de default utilizando una distribución binomial:
-
-$$
-\text{default} = \text{Binomial}(1, P(\text{default}))
-$$
-
-4. **Cálculo del Gini:**
-
-El **Gini** se calcula a partir de la curva ROC, que compara la tasa de verdaderos positivos (True Positive Ratio - TPR) con la tasa de falsos positivos (False Positive Ratio - FPR):
-
-$$
-Gini = 2 \times \text{AUC} - 1
-$$
-
-Donde:
-- **AUC**: Área bajo la curva ROC, que se obtiene al trazar la TPR respecto a la FPR.
-
-5. **Matriz de Confusión:**
-
-Con el fin de observar la performance del modelo, usamos la matriz de confusión en sus 4 cuadrantes:
-
-- **Verdaderos Positivos (TP)**: Casos correctamente clasificados como defaults.
-- **Verdaderos Negativos (TN)**: Casos correctamente clasificados como no defaults.
-- **Falsos Positivos (FP)**: Casos incorrectamente clasificados como defaults.
-- **Falsos Negativos (FN)**: Casos incorrectamente clasificados como no defaults.
-
-La matriz de confusión se calcula con:
-
-$$
-\begin{array}{|c|c|}
-\hline
-\text{Predicción} & \text{Observación} \\
-\hline
-\text{TP} & \text{FN} \\
-\hline
-\text{FP} & \text{TN} \\
-\hline
-\end{array}
-$$
-""")
 
 
 import numpy as np
@@ -179,3 +105,79 @@ RSE_max = st.sidebar.slider('Máximo RSE', 1.0, 10.0, 3.0, 0.1)
 
 # Actualizar gráficos basados en los valores de los sliders
 update_plot(k_RSE, c_RSE, RSE_max)
+
+
+st.markdown(r"""
+# Calculadora de Gini sintético con supuestos algo heroicos 
+
+Se usan ecuaciones para calcular las probabilidades de default, generar los defaults, y calcular el Gini. Por simplicidad, se usa una única variable sintética, "ratio de sobre-endeudamiento":
+
+1. **Ecuación para el Ratio de sobre endeudamiento (RSE):**
+
+El **Ratio de Sobreendeudamiento (RSE)** se genera utilizando una distribución normal truncada (truncada porque se asume que no puede tener valores de apalancamiento negativos o demasiado altos):
+
+$$
+RSE = \max\left(0, \min\left(RSE_{\text{max}}, \mathcal{N}(\mu_{\text{deuda}}, \sigma_{\text{deuda}})\right)\right)
+$$
+
+Donde:
+- $\mu_{\text{deuda}}$ = 1.0: Media del RSE.
+- $\sigma_{\text{deuda}}$ = 0.5: Desviación estándar del RSE.
+- $\mathcal{N}$ representa la distribución normal.
+- $RSE_{\text{max}}$ es un parámetro ajustable que determina el valor máximo del RSE.
+
+2. **Función Logística para Calcular la Probabilidad de Default:**
+
+La probabilidad de default $P(\text{default})$ se calcula utilizando la siguiente ecuación logística, incorporando en "z" el proceso generador de datos del RSE:
+
+$$
+P(\text{default} \mid RSE) = \frac{1}{1 + e^{-z}}
+$$
+
+Donde:
+$$
+z = k_{\text{RSE}} \cdot (RSE - c_{\text{RSE}})
+$$
+
+3. **Generación de Defaults Usando la Distribución Binomial:**
+
+Después de calcular las probabilidades de default, se generan los eventos de default utilizando una distribución binomial:
+
+$$
+\text{default} = \text{Binomial}(1, P(\text{default}))
+$$
+
+4. **Cálculo del Gini:**
+
+El **Gini** se calcula a partir de la curva ROC, que compara la tasa de verdaderos positivos (True Positive Ratio - TPR) con la tasa de falsos positivos (False Positive Ratio - FPR):
+
+$$
+Gini = 2 \times \text{AUC} - 1
+$$
+
+Donde:
+- **AUC**: Área bajo la curva ROC, que se obtiene al trazar la TPR respecto a la FPR.
+
+5. **Matriz de Confusión:**
+
+Con el fin de observar la performance del modelo, usamos la matriz de confusión en sus 4 cuadrantes:
+
+- **Verdaderos Positivos (TP)**: Casos correctamente clasificados como defaults.
+- **Verdaderos Negativos (TN)**: Casos correctamente clasificados como no defaults.
+- **Falsos Positivos (FP)**: Casos incorrectamente clasificados como defaults.
+- **Falsos Negativos (FN)**: Casos incorrectamente clasificados como no defaults.
+
+La matriz de confusión se calcula con:
+
+$$
+\begin{array}{|c|c|}
+\hline
+\text{Predicción} & \text{Observación} \\
+\hline
+\text{TP} & \text{FN} \\
+\hline
+\text{FP} & \text{TN} \\
+\hline
+\end{array}
+$$
+""")
