@@ -4,33 +4,33 @@ import streamlit as st
 st.markdown(r"""
 # Explicación de las Ecuaciones Utilizadas
 
-En la versión del código anterior, se utilizan varias ecuaciones fundamentales para calcular las probabilidades de default, generar los eventos de default, y calcular el Gini. Aquí te detallo cada una de las ecuaciones involucradas:
+Se usan ecuaciones para calcular las probabilidades de default, generar los defaults, y calcular el Gini. Por simplicidad, se usa una única variable sintética, "ratio de sobre-endeudamiento":
 
-1. **Ecuación para el Ratio de Sobreendeudamiento (DTI):**
+1. **Ecuación para el Ratio de sobre endeudamiento (RSE):**
 
-El **Ratio de Sobreendeudamiento (DTI)** se genera utilizando una distribución normal truncada:
+El **Ratio de Sobreendeudamiento (RSE)** se genera utilizando una distribución normal truncada:
 
 $$
-DTI = \max\left(0, \min\left(dti_{\text{max}}, \mathcal{N}(\mu_{\text{deuda}}, \sigma_{\text{deuda}})\right)\right)
+RSE = \max\left(0, \min\left(RSE_{\text{max}}, \mathcal{N}(\mu_{\text{deuda}}, \sigma_{\text{deuda}})\right)\right)
 $$
 
 Donde:
-- $\mu_{\text{deuda}}$ = 1.0: Media del DTI.
-- $\sigma_{\text{deuda}}$ = 0.5: Desviación estándar del DTI.
+- $\mu_{\text{deuda}}$ = 1.0: Media del RSE.
+- $\sigma_{\text{deuda}}$ = 0.5: Desviación estándar del RSE.
 - $\mathcal{N}$ representa la distribución normal.
-- $dti_{\text{max}}$ es un parámetro ajustable que determina el valor máximo del DTI.
+- $RSE_{\text{max}}$ es un parámetro ajustable que determina el valor máximo del RSE.
 
 2. **Función Logística para Calcular la Probabilidad de Default:**
 
-La probabilidad de default $P(\text{default})$ se calcula utilizando la siguiente ecuación logística:
+La probabilidad de default $P(\text{default})$ se calcula utilizando la siguiente ecuación logística, incorporando en "z" el proceso generador de datos del RSE:
 
 $$
-P(\text{default} \mid DTI) = \frac{1}{1 + e^{-z}}
+P(\text{default} \mid RSE) = \frac{1}{1 + e^{-z}}
 $$
 
 Donde:
 $$
-z = k_{\text{DTI}} \cdot (DTI - c_{\text{DTI}})
+z = k_{\text{RSE}} \cdot (RSE - c_{\text{RSE}})
 $$
 
 3. **Generación de Defaults Usando la Distribución Binomial:**
@@ -43,18 +43,18 @@ $$
 
 4. **Cálculo del Gini:**
 
-El **Gini** se calcula a partir de la curva ROC (Receiver Operating Characteristic), que compara la tasa de verdaderos positivos (TPR) con la tasa de falsos positivos (FPR):
+El **Gini** se calcula a partir de la curva ROC, que compara la tasa de verdaderos positivos (True Positive Ratio - TPR) con la tasa de falsos positivos (False Positive Ratio - FPR):
 
 $$
 Gini = 2 \times \text{AUC} - 1
 $$
 
 Donde:
-- **AUC**: Área bajo la curva ROC, que se obtiene al trazar la TPR frente a la FPR.
+- **AUC**: Área bajo la curva ROC, que se obtiene al trazar la TPR respecto a la FPR.
 
 5. **Matriz de Confusión:**
 
-Para evaluar el rendimiento del modelo, se utiliza una matriz de confusión que clasifica las predicciones en cuatro categorías:
+Con el fin de observar la performance del modelo, usamos la matriz de confusión en sus 4 cuadrantes:
 
 - **Verdaderos Positivos (TP)**: Casos correctamente clasificados como defaults.
 - **Verdaderos Negativos (TN)**: Casos correctamente clasificados como no defaults.
@@ -110,25 +110,25 @@ def plot_gini_curve(df):
     plt.legend(loc="lower right")
     st.pyplot(plt)
 
-# Simular datos de DTI
+# Simular datos de RSE
 np.random.seed(42)
 n_samples = 10000
 
 # Función para actualizar el gráfico, la matriz de confusión, y el Gini basado en los parámetros
-def update_plot(k_dti, c_dti, dti_max):
-    # Regenerar los valores de DTI con el rango máximo ajustable
+def update_plot(k_RSE, c_RSE, RSE_max):
+    # Regenerar los valores de RSE con el rango máximo ajustable
     debt_mean = 1.0
     debt_std = 0.5
-    dti = np.clip(np.random.normal(debt_mean, debt_std, n_samples), 0, dti_max)
+    RSE = np.clip(np.random.normal(debt_mean, debt_std, n_samples), 0, RSE_max)
 
     # Calcular las probabilidades de default usando la función logística
-    default_probs = 1 / (1 + np.exp(-(k_dti * (dti - c_dti))))
+    default_probs = 1 / (1 + np.exp(-(k_RSE * (RSE - c_RSE))))
 
     # Generar los defaults utilizando la función binomial
     defaults = np.random.binomial(1, default_probs)
 
     df = pd.DataFrame({
-        'dti': dti,
+        'RSE': RSE,
         'default_prob': default_probs,
         'default': defaults
     })
@@ -158,24 +158,24 @@ def update_plot(k_dti, c_dti, dti_max):
     st.write(f"Número de Defaults 'Reales': {num_defaults}")
     st.write(f"Número de No Defaults 'Reales': {num_non_defaults}")
 
-    # Graficar curva de densidad de DTI para No Default y Default
+    # Graficar curva de densidad de RSE para No Default y Default
     plt.figure(figsize=(12, 6))
-    sns.kdeplot(df[df['default'] == 0]['dti'], label='Sin Default', color='blue', fill=True, alpha=0.5)
-    sns.kdeplot(df[df['default'] == 1]['dti'], label='Con Default', color='red', fill=True, alpha=0.5)
+    sns.kdeplot(df[df['default'] == 0]['RSE'], label='Sin Default', color='blue', fill=True, alpha=0.5)
+    sns.kdeplot(df[df['default'] == 1]['RSE'], label='Con Default', color='red', fill=True, alpha=0.5)
 
-    plt.xlabel('Ratio Deuda/Ingreso (DTI)')
+    plt.xlabel('Ratio Deuda/Ingreso (RSE)')
     plt.ylabel('Densidad')
     plt.legend(loc='upper right')
-    plt.title(f'Curva de Densidad de DTI para Default y Sin Default\nGini: {gini_value:.4f}')
+    plt.title(f'Curva de Densidad de RSE para Default y Sin Default\nGini: {gini_value:.4f}')
     st.pyplot(plt)
 
     # Graficar curva Gini
     plot_gini_curve(df)
 
 # Crear sliders interactivos
-k_dti = st.sidebar.slider('Pendiente (k_DTI)', 0.01, 20.0, 1.0, 0.1)
-c_dti = st.sidebar.slider('Desplazamiento (c_DTI)', 0.0, 5.0, 1.5, 0.1)
-dti_max = st.sidebar.slider('Máximo DTI', 1.0, 10.0, 3.0, 0.1)
+k_RSE = st.sidebar.slider('Pendiente (k_RSE)', 0.01, 20.0, 1.0, 0.1)
+c_RSE = st.sidebar.slider('Desplazamiento (c_RSE)', 0.0, 5.0, 1.5, 0.1)
+RSE_max = st.sidebar.slider('Máximo RSE', 1.0, 10.0, 3.0, 0.1)
 
 # Actualizar gráficos basados en los valores de los sliders
-update_plot(k_dti, c_dti, dti_max)
+update_plot(k_RSE, c_RSE, RSE_max)
