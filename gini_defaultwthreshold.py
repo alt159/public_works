@@ -1,8 +1,9 @@
 import streamlit as st
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, confusion_matrix, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import roc_curve, auc, confusion_matrix, precision_score, recall_score, precision_recall_curve
 import seaborn as sns
 import streamlit as st
 
@@ -12,22 +13,25 @@ def gini(y_true, y_probs):
     roc_auc = auc(fpr, tpr)
     return 2 * roc_auc - 1
 
-def gini_binarized(y_true, y_preds):
-    fpr, tpr, _ = roc_curve(y_true, y_preds)
-    roc_auc = auc(fpr, tpr)
-    return 2 * roc_auc - 1
-
-def plot_roc_curve(y_true, y_probs):
-    fpr, tpr, _ = roc_curve(y_true, y_probs)
+def plot_pr_curve(y_true, y_probs):
+    precision, recall, _ = precision_recall_curve(y_true, y_probs)
     plt.figure()
-    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc_score(y_true, y_probs):.2f})')
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.0])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
-    plt.legend(loc="lower right")
+    plt.plot(recall, precision, marker='.', label='Precision-Recall curve')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Curva de Precisión-Recall')
+    plt.legend()
+    st.pyplot(plt)
+
+def plot_tpr_fpr_vs_threshold(y_true, y_probs):
+    fpr, tpr, thresholds = roc_curve(y_true, y_probs)
+    plt.figure()
+    plt.plot(thresholds, tpr, label='True Positive Rate (Recall)')
+    plt.plot(thresholds, fpr, label='False Positive Rate')
+    plt.xlabel('Threshold')
+    plt.ylabel('Rate')
+    plt.title('TPR y FPR en función del Threshold')
+    plt.legend()
     st.pyplot(plt)
 
 def plot_density_by_threshold(df, threshold):
@@ -45,7 +49,7 @@ def plot_density_by_threshold(df, threshold):
 np.random.seed(42)
 n_samples = 10000
 
-# Función para actualizar el gráfico, la matriz de confusión, y el Gini basado en los parámetros
+# Función para actualizar los gráficos y métricas en función de los parámetros
 def update_plot(k_dti, c_dti, dti_max, threshold):
     # Regenerar los valores de DTI con el rango máximo ajustable
     debt_mean = 1.0
@@ -86,12 +90,15 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     st.write(f"Precisión: {precision:.2f}")
     st.write(f"Sensibilidad (Recall): {recall:.2f}")
 
-    # Calcular y mostrar el Gini modificado basado en las predicciones binarizadas
-    gini_value_bin = gini_binarized(df['default'], predicted_defaults)
-    st.write(f"Gini basado en predicciones binarizadas: {gini_value_bin:.4f}")
+    # Calcular y mostrar el Gini tradicional basado en probabilidades continuas
+    gini_value = gini(df['default'], df['default_prob'])
+    st.write(f"Gini basado en probabilidades continuas: {gini_value:.4f}")
 
-    # Graficar curva ROC basada en probabilidades continuas
-    plot_roc_curve(df['default'], df['default_prob'])
+    # Graficar curva PR basada en probabilidades continuas
+    plot_pr_curve(df['default'], df['default_prob'])
+
+    # Graficar TPR y FPR en función del threshold
+    plot_tpr_fpr_vs_threshold(df['default'], df['default_prob'])
 
     # Graficar densidades de las probabilidades de default y los predichos como default según el threshold
     plot_density_by_threshold(df, threshold)
