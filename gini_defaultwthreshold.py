@@ -1,4 +1,6 @@
 import streamlit as st
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -32,13 +34,13 @@ def plot_gini_curve(df):
     plt.legend(loc="lower right")
     st.pyplot(plt)
 
-def plot_distribution_by_threshold(df, predicted_defaults):
+def plot_density_by_threshold(df, threshold):
     plt.figure(figsize=(12, 6))
-    sns.histplot(df['default_prob'], kde=False, bins=50, color='blue', label='Probabilidades de Default')
-    sns.histplot(df[predicted_defaults == 1]['default_prob'], kde=False, bins=50, color='red', label='Clasificados como Default')
+    sns.kdeplot(df['default_prob'], label='Probabilidades de Default', color='blue', fill=True, alpha=0.5)
+    sns.kdeplot(df[df['default_prob'] >= threshold]['default_prob'], label='Clasificados como Default', color='red', fill=True, alpha=0.5)
     plt.axvline(x=threshold, color='green', linestyle='--', label=f'Threshold = {threshold}')
     plt.xlabel('Probabilidad de Default')
-    plt.ylabel('Conteo')
+    plt.ylabel('Densidad')
     plt.legend(loc='upper right')
     plt.title('Distribución de Probabilidades de Default y Threshold Aplicado')
     st.pyplot(plt)
@@ -87,12 +89,15 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     recall = recall_score(df['default'], predicted_defaults)
     st.write(f"Precisión: {precision:.2f}")
     st.write(f"Sensibilidad (Recall): {recall:.2f}")
-    st.write(f"Gini: {gini(df['default'], df['default_prob']):.4f}")
 
-    # Graficar distribución de las probabilidades y clasificaciones por threshold
-    plot_distribution_by_threshold(df, predicted_defaults)
+    # Recalcular el Gini utilizando las predicciones binarizadas en lugar de las probabilidades continuas
+    gini_value = gini(df['default'], predicted_defaults)
+    st.write(f"Gini basado en el punto de corte: {gini_value:.4f}")
 
-    # Graficar curva Gini
+    # Graficar densidades de las probabilidades de default y los predichos como default según el threshold
+    plot_density_by_threshold(df, threshold)
+
+    # Graficar curva Gini original
     plot_gini_curve(df)
 
 # Crear sliders interactivos
