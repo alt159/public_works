@@ -2,7 +2,7 @@ import streamlit as st
 
 # Incluir explicación y ecuaciones en Markdown con soporte para LaTeX
 st.markdown(r"""
-# Explicación de las Ecuaciones Utilizadas
+# Calculadora de Gini sintético con supuestos 
 
 Se usan ecuaciones para calcular las probabilidades de default, generar los defaults, y calcular el Gini. Por simplicidad, se usa una única variable sintética, "ratio de sobre-endeudamiento":
 
