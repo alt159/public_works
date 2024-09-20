@@ -1,9 +1,8 @@
 import streamlit as st
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, confusion_matrix, precision_score, recall_score
+from sklearn.metrics import roc_curve, auc, confusion_matrix, precision_score, recall_score, roc_auc_score
 import seaborn as sns
 import streamlit as st
 
@@ -13,23 +12,21 @@ def gini(y_true, y_probs):
     roc_auc = auc(fpr, tpr)
     return 2 * roc_auc - 1
 
-def plot_gini_curve(df, predicted_defaults):
-    # Ordenar por predicciones binarizadas en orden descendente
-    df = df.sort_values(by='default_prob', ascending=False).reset_index(drop=True)
+def gini_binarized(y_true, y_preds):
+    fpr, tpr, _ = roc_curve(y_true, y_preds)
+    roc_auc = auc(fpr, tpr)
+    return 2 * roc_auc - 1
 
-    # Calcular la curva de Lorenz para el Gini usando predicciones binarizadas
-    total_defaults = df['default'].sum()
-    df['cum_defaults'] = df['default'].cumsum() / total_defaults
-    df['cum_population'] = (np.arange(len(df)) + 1) / len(df)
-
+def plot_roc_curve(y_true, y_probs):
+    fpr, tpr, _ = roc_curve(y_true, y_probs)
     plt.figure()
-    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], predicted_defaults):.2f})')
-    plt.plot([0, 1], [0, 1], 'k--')
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (AUC = {roc_auc_score(y_true, y_probs):.2f})')
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
-    plt.xlabel('Fracción acumulada de la población')
-    plt.ylabel('Fracción acumulada de defaults')
-    plt.title('Curva de Gini')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
     st.pyplot(plt)
 
@@ -89,15 +86,15 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     st.write(f"Precisión: {precision:.2f}")
     st.write(f"Sensibilidad (Recall): {recall:.2f}")
 
-    # Recalcular el Gini utilizando las predicciones binarizadas en lugar de las probabilidades continuas
-    gini_value = gini(df['default'], predicted_defaults)
-    st.write(f"Gini basado en el punto de corte: {gini_value:.4f}")
+    # Calcular y mostrar el Gini modificado basado en las predicciones binarizadas
+    gini_value_bin = gini_binarized(df['default'], predicted_defaults)
+    st.write(f"Gini basado en predicciones binarizadas: {gini_value_bin:.4f}")
+
+    # Graficar curva ROC basada en probabilidades continuas
+    plot_roc_curve(df['default'], df['default_prob'])
 
     # Graficar densidades de las probabilidades de default y los predichos como default según el threshold
     plot_density_by_threshold(df, threshold)
-
-    # Graficar curva Gini basada en predicciones binarizadas
-    plot_gini_curve(df, predicted_defaults)
 
 # Crear sliders interactivos
 k_dti = st.sidebar.slider('Pendiente (k_DTI)', 0.01, 20.0, 1.0, 0.1)
