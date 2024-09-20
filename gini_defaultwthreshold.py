@@ -1,6 +1,5 @@
 import streamlit as st
 
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,7 +13,7 @@ def gini(y_true, y_probs):
     roc_auc = auc(fpr, tpr)
     return 2 * roc_auc - 1
 
-def plot_gini_curve(df):
+def plot_gini_curve(df, predicted_defaults):
     # Ordenar por probabilidades de default en orden descendente
     df = df.sort_values(by='default_prob', ascending=False).reset_index(drop=True)
 
@@ -24,7 +23,7 @@ def plot_gini_curve(df):
     df['cum_population'] = (np.arange(len(df)) + 1) / len(df)
 
     plt.figure()
-    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], df["default_prob"]):.2f})')
+    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], predicted_defaults):.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
@@ -57,7 +56,7 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
         'default': defaults
     })
 
-    # Ordenar las predicciones según el threshold
+    # Utilizar el threshold ajustable para predicciones
     predicted_defaults = (df['default_prob'] >= threshold).astype(int)
 
     # Matriz de confusión
@@ -78,7 +77,7 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     recall = recall_score(df['default'], predicted_defaults)
     st.write(f"Precisión: {precision:.2f}")
     st.write(f"Sensibilidad (Recall): {recall:.2f}")
-    st.write(f"Gini: {gini(df['default'], df['default_prob']):.4f}")
+    st.write(f"Gini: {gini(df['default'], predicted_defaults):.4f}")
 
     # Graficar curva de densidad de DTI para No Default y Default
     plt.figure(figsize=(12, 6))
@@ -88,11 +87,11 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     plt.xlabel('Ratio Deuda/Ingreso (DTI)')
     plt.ylabel('Densidad')
     plt.legend(loc='upper right')
-    plt.title(f'Curva de Densidad de DTI para Default y Sin Default\nGini: {gini(df["default"], df["default_prob"]):.4f}')
+    plt.title(f'Curva de Densidad de DTI para Default y Sin Default\nGini: {gini(df["default"], predicted_defaults):.4f}')
     st.pyplot(plt)
 
     # Graficar curva Gini
-    plot_gini_curve(df)
+    plot_gini_curve(df, predicted_defaults)
 
 # Crear sliders interactivos
 k_dti = st.sidebar.slider('Pendiente (k_DTI)', 0.01, 20.0, 1.0, 0.1)
@@ -102,7 +101,6 @@ threshold = st.sidebar.slider('Threshold (Punto de Corte)', 0.0, 1.0, 0.5, 0.01)
 
 # Actualizar gráficos basados en los valores de los sliders
 update_plot(k_dti, c_dti, dti_max, threshold)
-
 
 
 
