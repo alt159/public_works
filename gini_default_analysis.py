@@ -8,7 +8,7 @@ Se usan ecuaciones para calcular las probabilidades de default, generar los defa
 
 1. **Ecuación para el Ratio de sobre endeudamiento (RSE):**
 
-El **Ratio de Sobreendeudamiento (RSE)** se genera utilizando una distribución normal truncada (el supuesto es que no puede tener valores negativos o demasiados altos):
+El **Ratio de Sobreendeudamiento (RSE)** se genera utilizando una distribución normal truncada (truncada porque se asume que no puede tener valores de apalancamiento negativos o demasiado altos):
 
 $$
 RSE = \max\left(0, \min\left(RSE_{\text{max}}, \mathcal{N}(\mu_{\text{deuda}}, \sigma_{\text{deuda}})\right)\right)
