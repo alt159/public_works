@@ -64,16 +64,20 @@ def update_plot(k_dti, c_dti, dti_max):
     cm = confusion_matrix(df['default'], predicted_defaults)
     tn, fp, fn, tp = cm.ravel()
 
+    # Mostrar matriz de confusión como tabla
+    st.write("Matriz de Confusión:")
+    cm_df = pd.DataFrame({
+        'Predicho No Default': [tn, fn],
+        'Predicho Default': [fp, tp]
+    }, index=['Real No Default', 'Real Default'])
+
+    st.table(cm_df)
+
     # Mostrar estadísticas descriptivas
     num_defaults = df['default'].sum()
     num_non_defaults = len(df) - num_defaults
     st.write(f"Número de Defaults 'Reales': {num_defaults}")
     st.write(f"Número de No Defaults 'Reales': {num_non_defaults}")
-    st.write(f"Valores Predichos vs. Observados:")
-    st.write(f"Verdaderos Negativos: {tn}")
-    st.write(f"Falsos Positivos: {fp}")
-    st.write(f"Falsos Negativos: {fn}")
-    st.write(f"Verdaderos Positivos: {tp}")
 
     # Graficar curva de densidad de DTI para No Default y Default
     plt.figure(figsize=(12, 6))
