@@ -1,6 +1,5 @@
 import streamlit as st
 
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,17 +13,17 @@ def gini(y_true, y_probs):
     roc_auc = auc(fpr, tpr)
     return 2 * roc_auc - 1
 
-def plot_gini_curve(df):
-    # Ordenar por probabilidades de default en orden descendente
+def plot_gini_curve(df, predicted_defaults):
+    # Ordenar por predicciones binarizadas en orden descendente
     df = df.sort_values(by='default_prob', ascending=False).reset_index(drop=True)
 
-    # Calcular la curva de Lorenz para el Gini
+    # Calcular la curva de Lorenz para el Gini usando predicciones binarizadas
     total_defaults = df['default'].sum()
     df['cum_defaults'] = df['default'].cumsum() / total_defaults
     df['cum_population'] = (np.arange(len(df)) + 1) / len(df)
 
     plt.figure()
-    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], df["default_prob"]):.2f})')
+    plt.plot(df['cum_population'], df['cum_defaults'], label=f'Curva de Gini (Índice de Gini = {gini(df["default"], predicted_defaults):.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
@@ -97,8 +96,8 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     # Graficar densidades de las probabilidades de default y los predichos como default según el threshold
     plot_density_by_threshold(df, threshold)
 
-    # Graficar curva Gini original
-    plot_gini_curve(df)
+    # Graficar curva Gini basada en predicciones binarizadas
+    plot_gini_curve(df, predicted_defaults)
 
 # Crear sliders interactivos
 k_dti = st.sidebar.slider('Pendiente (k_DTI)', 0.01, 20.0, 1.0, 0.1)
