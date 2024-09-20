@@ -1,3 +1,82 @@
+import streamlit as st
+
+# Incluir explicación y ecuaciones en Markdown con soporte para LaTeX
+st.markdown(r"""
+# Explicación de las Ecuaciones Utilizadas
+
+En la versión del código anterior, se utilizan varias ecuaciones fundamentales para calcular las probabilidades de default, generar los eventos de default, y calcular el Gini. Aquí te detallo cada una de las ecuaciones involucradas:
+
+1. **Ecuación para el Ratio de Sobreendeudamiento (DTI):**
+
+El **Ratio de Sobreendeudamiento (DTI)** se genera utilizando una distribución normal truncada:
+
+$$
+DTI = \max\left(0, \min\left(dti_{\text{max}}, \mathcal{N}(\mu_{\text{deuda}}, \sigma_{\text{deuda}})\right)\right)
+$$
+
+Donde:
+- $\mu_{\text{deuda}}$ = 1.0: Media del DTI.
+- $\sigma_{\text{deuda}}$ = 0.5: Desviación estándar del DTI.
+- $\mathcal{N}$ representa la distribución normal.
+- $dti_{\text{max}}$ es un parámetro ajustable que determina el valor máximo del DTI.
+
+2. **Función Logística para Calcular la Probabilidad de Default:**
+
+La probabilidad de default $P(\text{default})$ se calcula utilizando la siguiente ecuación logística:
+
+$$
+P(\text{default} \mid DTI) = \frac{1}{1 + e^{-z}}
+$$
+
+Donde:
+$$
+z = k_{\text{DTI}} \cdot (DTI - c_{\text{DTI}})
+$$
+
+3. **Generación de Defaults Usando la Distribución Binomial:**
+
+Después de calcular las probabilidades de default, se generan los eventos de default utilizando una distribución binomial:
+
+$$
+\text{default} = \text{Binomial}(1, P(\text{default}))
+$$
+
+4. **Cálculo del Gini:**
+
+El **Gini** se calcula a partir de la curva ROC (Receiver Operating Characteristic), que compara la tasa de verdaderos positivos (TPR) con la tasa de falsos positivos (FPR):
+
+$$
+Gini = 2 \times \text{AUC} - 1
+$$
+
+Donde:
+- **AUC**: Área bajo la curva ROC, que se obtiene al trazar la TPR frente a la FPR.
+
+5. **Matriz de Confusión:**
+
+Para evaluar el rendimiento del modelo, se utiliza una matriz de confusión que clasifica las predicciones en cuatro categorías:
+
+- **Verdaderos Positivos (TP)**: Casos correctamente clasificados como defaults.
+- **Verdaderos Negativos (TN)**: Casos correctamente clasificados como no defaults.
+- **Falsos Positivos (FP)**: Casos incorrectamente clasificados como defaults.
+- **Falsos Negativos (FN)**: Casos incorrectamente clasificados como no defaults.
+
+La matriz de confusión se calcula con:
+
+$$
+\begin{array}{|c|c|}
+\hline
+\text{Predicción} & \text{Observación} \\
+\hline
+\text{TP} & \text{FN} \\
+\hline
+\text{FP} & \text{TN} \\
+\hline
+\end{array}
+$$
+""")
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
