@@ -1,9 +1,10 @@
 import streamlit as st
 
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc, confusion_matrix
+from sklearn.metrics import roc_curve, auc, confusion_matrix, precision_score, recall_score
 import seaborn as sns
 import streamlit as st
 
@@ -56,9 +57,7 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
         'default': defaults
     })
 
-    gini_value = gini(df['default'], df['default_prob'])
-
-    # Utilizar el threshold ajustable para predicciones
+    # Ordenar las predicciones según el threshold
     predicted_defaults = (df['default_prob'] >= threshold).astype(int)
 
     # Matriz de confusión
@@ -74,11 +73,12 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
 
     st.table(cm_df)
 
-    # Mostrar estadísticas descriptivas
-    num_defaults = df['default'].sum()
-    num_non_defaults = len(df) - num_defaults
-    st.write(f"Número de Defaults 'Reales': {num_defaults}")
-    st.write(f"Número de No Defaults 'Reales': {num_non_defaults}")
+    # Mostrar estadísticas de rendimiento del modelo
+    precision = precision_score(df['default'], predicted_defaults)
+    recall = recall_score(df['default'], predicted_defaults)
+    st.write(f"Precisión: {precision:.2f}")
+    st.write(f"Sensibilidad (Recall): {recall:.2f}")
+    st.write(f"Gini: {gini(df['default'], df['default_prob']):.4f}")
 
     # Graficar curva de densidad de DTI para No Default y Default
     plt.figure(figsize=(12, 6))
@@ -88,7 +88,7 @@ def update_plot(k_dti, c_dti, dti_max, threshold):
     plt.xlabel('Ratio Deuda/Ingreso (DTI)')
     plt.ylabel('Densidad')
     plt.legend(loc='upper right')
-    plt.title(f'Curva de Densidad de DTI para Default y Sin Default\nGini: {gini_value:.4f}')
+    plt.title(f'Curva de Densidad de DTI para Default y Sin Default\nGini: {gini(df["default"], df["default_prob"]):.4f}')
     st.pyplot(plt)
 
     # Graficar curva Gini
